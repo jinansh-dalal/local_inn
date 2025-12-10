@@ -1,2 +1,7 @@
 local-inn/*
 test.py
+results
+create_dummy_data.py
+dummy_data.npz
+train_data.json
+train_data.npz.npy
