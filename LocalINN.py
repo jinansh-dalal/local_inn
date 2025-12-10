@@ -3,6 +3,7 @@ import torch.nn as nn
 from FrEIA.framework import InputNode, OutputNode, Node, ReversibleGraphNet, ConditionNode
 from FrEIA.modules import GLOWCouplingBlock, PermuteRandom
 from VariationalAutoEncoder import VAE
+from PositionalEncoding import PositionalEncoding
 
 class Local_INN(nn.Module):
     def __init__(self, device='cpu'):
@@ -18,6 +19,8 @@ class Local_INN(nn.Module):
             param.data = 0.05 * torch.randn_like(param)
         
         self.cond_net = self.subnet_cond(self.cond_out_dim)
+        self.pose_encoding = PositionalEncoding(L=10)
+        self.cond_encoding = PositionalEncoding(L=1)
         self.vae = VAE()
 
     def subnet_cond(self, c_out):
