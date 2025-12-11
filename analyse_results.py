@@ -6,8 +6,10 @@ import sys
 
 EXP_NAME = sys.argv[1]
 MODEL_NAME = "best"
-DATA_FILE = os.path.join('data', EXP_NAME, 'train_data.npz')
-CONF_FILE = os.path.join('data', EXP_NAME, 'train_data.json')
+DATA_DIR = os.path.join('data', EXP_NAME)
+DATA_FILE = os.path.join(DATA_DIR, 'train_data.npz')
+CONF_FILE = os.path.join(DATA_DIR, 'train_data.json')
+OUT_DIR = os.path.join('results', EXP_NAME)
 TEST_SIZE = 4000
 DEVICE = "cpu"
 
@@ -124,7 +126,7 @@ def plot_lidar_comparison(best_idx, worst_idx, points, dp, norm_lidar):
     plot_row(axs[1], worst_idx, "WORST")
     
     plt.tight_layout()
-    plt.savefig('lidar_analysis.png')
+    plt.savefig(os.path.join(OUT_DIR, "lidar_analysis.png"))
     print("Saved lidar_analysis.png")
     plt.show()
 
@@ -142,7 +144,7 @@ def plot_error_map(points):
     plt.axis('equal')
     plt.grid(True, alpha=0.3)
     
-    plt.savefig('error_map.png')
+    plt.savefig(os.path.join(OUT_DIR, "error_map.png"))
     print("Saved error_map.png")
     plt.show()
 

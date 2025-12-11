@@ -4,16 +4,30 @@ Prerequisites
 - Python 3.11 or higher
 
 ```
-source setup.bash
+source setup/setup.bash
 ```
 
-Move your rosbag to `data/`
+Add your rosbag to `data/`
 
-Run
+Commands - 
+
+Dataloader (Convert from rosbag)
 ```
 python dataloader.py <EXP_NAME> <ROSBAG_NAME>
+```
+
+Preprocessing
+```
 python dataprocess.py <EXP_NAME>
+```
+
+Training
+```
 python model.py <EXP_NAME>
+```
+
+Analysis
+```
 python analyse_results <EXP_NAME>
 ```
 

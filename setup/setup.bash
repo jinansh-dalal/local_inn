@@ -8,7 +8,7 @@ fi
 
 source $VENV_DIR/bin/activate
 
-REQ_FILE="requirements.txt"
+REQ_FILE="setup/requirements.txt"
 
 if [ -f "$REQ_FILE" ]; then
     pip install --upgrade pip
@@ -17,4 +17,6 @@ else
     echo "Warning: $REQ_FILE not found."
 fi
 
-source $VENV_DIR/bin/activate
+if [ ! -d "data" ]; then
+    mkdir data
+fi
