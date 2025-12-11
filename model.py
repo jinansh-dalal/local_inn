@@ -18,7 +18,7 @@ DATA_DIR = os.path.join('data', EXP_NAME)
 DATAFILE = os.path.join(DATA_DIR, 'train_data.npz')
 NORMFILE = os.path.join(DATA_DIR, 'train_data.json')
 COLS = 333
-TEST_DATA = 500
+TEST_DATA = 3000
 
 CONTINUE_TRAINING = 0
 TRANSFER_TRAINING = 0
@@ -193,9 +193,9 @@ def main():
 
                 pred_theta = p_encoding_t.batch_decode_even(x_hat_0[:, 4], x_hat_0[:, 5])
                 pred_theta_rad = pred_theta * 2 * np.pi
-                gt_theta_rad   = x_gt[:, 2]
+                gt_theta_rad   = x_gt[:, 2] * 2 * np.pi
 
-                ang_err = torch.abs(pred_theta_rad - gt_theta_rad)
+                ang_err = torch.abs(gt_theta_rad - pred_theta_rad)
                 ang_err = torch.min(ang_err, 2*np.pi - ang_err)
                 epoch_orient_err.append(ang_err)
             

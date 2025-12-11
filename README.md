@@ -14,5 +14,6 @@ Run
 python dataloader.py <EXP_NAME> <ROSBAG_NAME>
 python dataprocess.py <EXP_NAME>
 python model.py <EXP_NAME>
+python analyse_results <EXP_NAME>
 ```
 
