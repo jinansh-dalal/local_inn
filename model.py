@@ -15,9 +15,9 @@ from VariationalAutoEncoder import VAE
 from utils.utils import ConfigJSON, DataProcessor # Removed DrivableCritic
 
 # --- Configuration ---
-EXP_NAME = "dummy_test_run"
+EXP_NAME = "first_test_run"
 DATA_DIR = './'             # Current directory
-DATAFILE = 'dummy_data.npz' 
+DATAFILE = 'my_rosbag_data.npz' 
 
 # Training Flags
 RE_PROCESS_DATA = 1      
@@ -113,8 +113,10 @@ def main():
     assert total_data.shape[1] == expected_cols, f"Data Shape Mismatch! Expected {expected_cols} columns, got {total_data.shape[1]}"
     print(f"Total Data Shape Verified: {total_data.shape}")
 
-    train_data = total_data[0:total_data.shape[0] - 5000]
-    test_data = total_data[total_data.shape[0] - 5000:]
+    train_data = total_data[0:total_data.shape[0] - 500]
+    test_data = total_data[total_data.shape[0] - 500:]
+    print(f"Train Data Shape Verified: {train_data.shape}")
+    print(f"Test Data Shape Verified: {test_data.shape}")
     
     # Fixed Error 4: Renamed variable to p_encoding_t to match usage below
     p_encoding_t = PositionalEncoding(L=1).to(device)
@@ -250,13 +252,39 @@ def main():
                 # Note: dp.de_normalize requires 'c' which might not be available if not re-processing
                 # We skip detailed error calc for now to avoid breaking on dp/c scope issues
                 # (You can re-add if you ensure 'c' and 'dp' persist)
+                pred_x = p_encoding_t.batch_decode(x_hat_0[:, 0], x_hat_0[:, 1])
+                pred_y = p_encoding_t.batch_decode(x_hat_0[:, 2], x_hat_0[:, 3])
+
+                real_x = dp.de_normalize(pred_x, c.d['normalization_x'])
+                real_y = dp.de_normalize(pred_y, c.d['normalization_y'])
                 
+                gt_x = dp.de_normalize(x_gt[:, 0], c.d['normalization_x'])
+                gt_y = dp.de_normalize(x_gt[:, 1], c.d['normalization_y'])
+
+                pos_err = torch.sqrt((real_x - gt_x)**2 + (real_y - gt_y)**2)
+                epoch_posit_err.append(pos_err)
+
+                pred_theta = p_encoding_t.batch_decode_even(x_hat_0[:, 4], x_hat_0[:, 5])
+                # Theta is normalized 0-1, so mult by 2pi to get radians
+                pred_theta_rad = pred_theta * 2 * np.pi
+                gt_theta_rad   = x_gt[:, 2]
+
+                ang_err = torch.abs(pred_theta_rad - gt_theta_rad)
+                ang_err = torch.min(ang_err, 2*np.pi - ang_err) # Shortest path
+                epoch_orient_err.append(ang_err)
+            
+            if len(epoch_posit_err) > 0:
+                avg_pos_err = torch.cat(epoch_posit_err).median().item()
+                avg_ang_err = torch.cat(epoch_orient_err).median().item()
+            else:
+                avg_pos_err = 0.0
+                avg_ang_err = 0.0
+
+            epoch_info[4] = avg_pos_err
+            epoch_info[5] = avg_ang_err
+
         epoch_time = (time.time() - epoch_time_start)
         remaining_time = (trainer.max_epoch - epoch) * epoch_time / 3600
-        
-        # Fill placeholders for Tensorboard
-        epoch_info[4] = 0.0 
-        epoch_info[5] = 0.0 
 
         model, return_text, _ = trainer.step(model, epoch_info, 0) # 0 for no mix precision
         if return_text == 'instable':
@@ -268,10 +296,12 @@ def main():
         writer.add_scalar("INN/0_forward", epoch_info[0], epoch)
         writer.add_scalar("INN/1_recon", epoch_info[1], epoch)
         writer.add_scalar("INN/2_reverse", epoch_info[2], epoch)
+        writer.add_scalar("INN/Err_Pos_m", epoch_info[4], epoch)
+        writer.add_scalar("INN/Err_Ang_rad", epoch_info[5], epoch)
         writer.add_scalar("INN/5_LR", current_lr, epoch)
         
-        text_print = "Epoch {:d} | Fwd {:.5f} | Rev {:.5f} | Time Left {:.1f}h | {}".format(
-            epoch, epoch_info[0], epoch_info[2], remaining_time, return_text)
+        text_print = "Ep {} | Fwd {:.4f} | Rev {:.4f} | PosErr {:.2f}m | AngErr {:.2f}r | {:.1f}h left".format(
+            epoch, epoch_info[0], epoch_info[2], epoch_info[4], epoch_info[5], remaining_time)
         print(text_print)
         with open('results/' + EXP_NAME + '/' + EXP_NAME + '.txt', "a") as tgt:
             tgt.writelines(text_print + '\n')
