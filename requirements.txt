@@ -1,0 +1,7 @@
+torch
+numpy
+FrEIA
+tqdm
+tensorboard
+PyYAML
+rosbags
